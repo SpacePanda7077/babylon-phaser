@@ -8,8 +8,8 @@ export type GameConfig = {
 };
 
 export class Game {
-  private canvas: HTMLCanvasElement;
-  private engine: EngineContext;
+  canvas: HTMLCanvasElement;
+  engine: EngineContext;
   config: GameConfig;
   constructor(
     config: GameConfig,
@@ -19,9 +19,9 @@ export class Game {
     this.canvas = canvas;
     this.engine = engine;
     this.config = config;
-    this.start(engine, canvas);
+    // this.start(engine, canvas);
   }
-  start(engine: EngineContext, canvas: HTMLCanvasElement) {
-    const first_scene = new this.config.scenes[0](canvas, engine);
+  start() {
+    const first_scene = new this.config.scenes[0]();
   }
 }

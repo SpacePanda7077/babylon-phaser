@@ -8,6 +8,12 @@ const config: GameConfig = {
   scenes: [MainGame],
 };
 
-export const startGame = (engine: EngineContext, canvas: HTMLCanvasElement) => {
-  const game = new Game(config, engine, canvas);
+export let game: Game;
+
+export const startGame = async (
+  engine: EngineContext,
+  canvas: HTMLCanvasElement,
+) => {
+  game = new Game(config, engine, canvas);
+  game.start();
 };

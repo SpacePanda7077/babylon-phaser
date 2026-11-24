@@ -5,4 +5,5 @@ export class BabylonScene {
   constructor(engine: EngineContext) {
     this.babylon_scene = createSceneContext(engine);
   }
+  start(key: string) {}
 }

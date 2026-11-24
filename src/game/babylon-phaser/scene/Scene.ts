@@ -9,6 +9,7 @@ import { BabylonScene } from "../babylon-scene/Babylon-Scene";
 import { Camera } from "../Camera/Camera";
 import { Light } from "../Light/Light";
 import { Add } from "../add/Add";
+import { game } from "../../main";
 
 export class Scene {
   protected canvas: HTMLCanvasElement;
@@ -18,14 +19,15 @@ export class Scene {
   protected light: Light;
   ready: Promise<void>;
   add: Add;
+  static key: String;
 
-  constructor(canvas: HTMLCanvasElement, engine: EngineContext) {
-    this.canvas = canvas;
-    this.engine = engine;
-    this.babylon_scene = new BabylonScene(engine).babylon_scene;
-    this.camera = new Camera(this.babylon_scene, canvas);
-    this.light = new Light(this.babylon_scene, engine);
-    this.add = new Add(this.babylon_scene, engine);
+  constructor() {
+    this.canvas = game.canvas;
+    this.engine = game.engine;
+    this.babylon_scene = new BabylonScene(this.engine).babylon_scene;
+    this.camera = new Camera(this.babylon_scene, this.canvas);
+    this.light = new Light(this.babylon_scene, this.engine);
+    this.add = new Add(this.babylon_scene, this.engine);
     this.ready = this.boot();
   }
 

@@ -2,6 +2,9 @@ import { addToScene, createPbrMaterial, createSphere } from "@babylonjs/lite";
 import { Scene } from "../babylon-phaser/scene/Scene";
 
 export class Game extends Scene {
+  constructor() {
+    super();
+  }
   async create() {
     this.camera.attachControl(true);
 
