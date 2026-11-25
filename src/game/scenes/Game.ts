@@ -2,6 +2,7 @@ import { addToScene, createPbrMaterial, createSphere } from "@babylonjs/lite";
 import { Scene } from "../babylon-phaser/scene/Scene";
 
 export class Game extends Scene {
+  static key = "Game";
   constructor() {
     super();
   }
@@ -21,5 +22,8 @@ export class Game extends Scene {
       .setColor("0x00ff00")
       .setScale({ x: 4, y: 0.5 });
     this.camera.attachControl(true);
+    window.addEventListener("keydown", () => {
+      this.scene.start("Menu");
+    });
   }
 }

@@ -1,6 +1,8 @@
+// BabylonPhaser.tsx
 import { createEngine, disposeEngine, startEngine } from "@babylonjs/lite";
 import { useEffect, useRef } from "react";
-import { startGame } from "./main";
+import type { Game } from "./babylon-phaser/Game";
+import { startGame, stopGame } from "./main";
 
 export default function BabylonPhaser() {
   const reactCanvas = useRef<HTMLCanvasElement | null>(null);
@@ -13,6 +15,7 @@ export default function BabylonPhaser() {
 
     let cancelled = false;
     let engine: Awaited<ReturnType<typeof createEngine>> | null = null;
+    let game: Game | null = null;
 
     const init = (async () => {
       // Wait for any previous engine on this canvas to be disposed first
@@ -23,7 +26,7 @@ export default function BabylonPhaser() {
         engine = await createEngine(canvas);
         if (cancelled) return;
 
-        startGame(engine, canvas);
+        game = await startGame(engine, canvas); // scene is registered when this resolves
         if (cancelled) return;
 
         await startEngine(engine);
@@ -34,10 +37,10 @@ export default function BabylonPhaser() {
 
     return () => {
       cancelled = true;
-      // Wait for init to settle, then dispose scene before engine
       teardownRef.current = init.then(async () => {
         try {
-          if (engine) disposeEngine(engine);
+          if (game) await stopGame(game); // scene first
+          if (engine) await disposeEngine(engine); // then engine
         } catch (e) {
           console.error("Babylon dispose failed:", e);
         }

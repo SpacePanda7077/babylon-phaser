@@ -24,6 +24,28 @@ export abstract class Shape<M extends Mesh = Mesh> {
   color: string;
   alpha: number;
 
+  // Position accessors: `shape.x += 1` reads and writes the mesh directly.
+  get x() {
+    return this.mesh.position.x;
+  }
+  set x(v: number) {
+    this.mesh.position.x = v;
+  }
+
+  get y() {
+    return this.mesh.position.y;
+  }
+  set y(v: number) {
+    this.mesh.position.y = v;
+  }
+
+  get z() {
+    return this.mesh.position.z;
+  }
+  set z(v: number) {
+    this.mesh.position.z = v;
+  }
+
   constructor(mesh: M, options: ShapeOptions = {}) {
     const { color, alpha, position, ...rest } = options;
 
@@ -77,9 +99,9 @@ export abstract class Shape<M extends Mesh = Mesh> {
   }
 
   setPosition(x: number, y: number, z: number) {
-    this.mesh.position.x = x;
-    this.mesh.position.y = y;
-    this.mesh.position.z = z;
+    this.x = x;
+    this.y = y;
+    this.z = z;
     return this;
   }
 
@@ -89,5 +111,6 @@ export abstract class Shape<M extends Mesh = Mesh> {
     } else {
       this.mesh.scaling.set(scale.x ?? 1, scale.y ?? 1, scale.z ?? 1);
     }
+    return this;
   }
 }
