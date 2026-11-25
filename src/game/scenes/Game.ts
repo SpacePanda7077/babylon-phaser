@@ -3,6 +3,7 @@ import { Scene } from "../babylon-phaser/scene/Scene";
 
 export class Game extends Scene {
   static key = "Game";
+  switchscene: import("../babylon-phaser/input/Keyboard/Key").Key;
   constructor() {
     super();
   }
@@ -22,8 +23,12 @@ export class Game extends Scene {
       .setColor("0x00ff00")
       .setScale({ x: 4, y: 0.5 });
     this.camera.attachControl(true);
-    window.addEventListener("keydown", () => {
+    this.switchscene = this.input.keyBoard.addKey("v");
+  }
+  update(delta: number): void {
+    if (this.switchscene.justDown()) {
       this.scene.start("Menu");
-    });
+      console.log("Switch");
+    }
   }
 }

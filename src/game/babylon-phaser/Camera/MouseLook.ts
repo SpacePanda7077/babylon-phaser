@@ -1,0 +1,131 @@
+// camera/MouseLook.ts
+import type { ArcRotateCamera } from "@babylonjs/lite";
+
+export type Vec3 = { x: number; y: number; z: number };
+
+/** Max degrees to look up / down from horizontal. */
+export type LookLimits = { up?: number; down?: number };
+
+const DEG2RAD = Math.PI / 180;
+const RAD2DEG = 180 / Math.PI;
+const MAX_LIMIT_DEG = 89; // 90 would flip the camera
+
+export function applyYawPitch(
+  cam: ArcRotateCamera,
+  yaw: number,
+  pitch: number,
+  radius: number,
+) {
+  cam.alpha = Math.atan2(-Math.cos(yaw), -Math.sin(yaw));
+  cam.beta = Math.PI / 2 + pitch;
+  cam.radius = radius;
+}
+
+export class MouseLook {
+  yaw = 0;
+  pitch = 0;
+  sensitivity = 0.002;
+  minPitch = -MAX_LIMIT_DEG * DEG2RAD; // looking down
+  maxPitch = MAX_LIMIT_DEG * DEG2RAD; // looking up
+  invertY = false;
+
+  private canvas: HTMLCanvasElement;
+  private enabled = false;
+
+  constructor(canvas: HTMLCanvasElement) {
+    this.canvas = canvas;
+  }
+
+  get locked() {
+    return document.pointerLockElement === this.canvas;
+  }
+
+  // ---- vertical look angle (degrees) -----------------------------------
+
+  /**
+   * Limit vertical look. `up` and `down` are degrees from horizontal.
+   * Omitted values keep their current limit.
+   * @example look.setLookLimits({ up: 30, down: 60 });
+   */
+  setLookLimits(limits: LookLimits) {
+    const clamp = (d: number) =>
+      Math.min(Math.max(d, 0), MAX_LIMIT_DEG) * DEG2RAD;
+    if (limits.up !== undefined) this.maxPitch = clamp(limits.up);
+    if (limits.down !== undefined) this.minPitch = -clamp(limits.down);
+    this.pitch = this.clampPitch(this.pitch);
+    return this;
+  }
+
+  get lookLimits(): Required<LookLimits> {
+    return { up: this.maxPitch * RAD2DEG, down: -this.minPitch * RAD2DEG };
+  }
+
+  /** Current vertical angle in degrees. Positive = looking up. */
+  get pitchDeg() {
+    return this.pitch * RAD2DEG;
+  }
+  set pitchDeg(v: number) {
+    this.pitch = this.clampPitch(v * DEG2RAD);
+  }
+
+  /** Current horizontal angle in degrees. */
+  get yawDeg() {
+    return this.yaw * RAD2DEG;
+  }
+  set yawDeg(v: number) {
+    this.yaw = v * DEG2RAD;
+  }
+
+  private clampPitch(p: number) {
+    return Math.min(this.maxPitch, Math.max(this.minPitch, p));
+  }
+
+  // ---- vectors ---------------------------------------------------------
+
+  get forward(): Vec3 {
+    return { x: Math.sin(this.yaw), y: 0, z: Math.cos(this.yaw) };
+  }
+
+  get right(): Vec3 {
+    return { x: Math.cos(this.yaw), y: 0, z: -Math.sin(this.yaw) };
+  }
+
+  get direction(): Vec3 {
+    const cp = Math.cos(this.pitch);
+    return {
+      x: Math.sin(this.yaw) * cp,
+      y: Math.sin(this.pitch),
+      z: Math.cos(this.yaw) * cp,
+    };
+  }
+
+  // ---- input -----------------------------------------------------------
+
+  enable() {
+    if (this.enabled) return;
+    this.enabled = true;
+    this.canvas.addEventListener("click", this.onClick);
+    document.addEventListener("mousemove", this.onMove);
+  }
+
+  disable() {
+    if (!this.enabled) return;
+    this.enabled = false;
+    this.canvas.removeEventListener("click", this.onClick);
+    document.removeEventListener("mousemove", this.onMove);
+    if (this.locked) document.exitPointerLock();
+  }
+
+  private onClick = () => {
+    if (!this.locked) this.canvas.requestPointerLock();
+  };
+
+  private onMove = (e: MouseEvent) => {
+    if (!this.locked) return;
+    const dir = this.invertY ? -1 : 1;
+    this.yaw += e.movementX * this.sensitivity;
+    this.pitch = this.clampPitch(
+      this.pitch - e.movementY * this.sensitivity * dir,
+    );
+  };
+}

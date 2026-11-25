@@ -1,24 +1,31 @@
-import type { Capsule } from "../../babylon-phaser/add/game-objects/Capsule";
+import type { MoveDir } from "../../babylon-phaser/Camera/BaseCamera";
 import type { Scene } from "../../babylon-phaser/scene/Scene";
-import type { input } from "../Inputs/input";
 
 export class Player {
   scene: Scene;
-  body: Capsule;
+  body!: ReturnType<Scene["add"]["Cube"]>;
+  speed = 3; // units per second
+  turnToMovement = true;
+
   constructor(scene: Scene) {
     this.scene = scene;
     this.createBody();
   }
+
   createBody() {
-    this.body = this.scene.add.Capsule({ x: 0, y: 0, z: 0 });
-  }
-  update(input: input, delta: number) {
-    const dt = delta / 1000;
-    this.handle_input(input, dt);
+    this.body = this.scene.add
+      .Cube({ x: 0, y: 0.5, z: 0 }, {}, "0xff0000")
+      .setScale(0.5);
   }
 
-  handle_input(input: input, dt: number) {
-    this.body.x += input.x * 0.5 * dt;
-    this.body.z += input.y * 0.5 * dt;
+  update(dir: MoveDir, delta: number) {
+    const dt = delta / 1000;
+
+    this.body.x += dir.x * this.speed * dt;
+    this.body.z += dir.z * this.speed * dt;
+
+    if (this.turnToMovement && (dir.x !== 0 || dir.z !== 0)) {
+      this.body.rotationY = Math.atan2(dir.x, dir.z);
+    }
   }
 }

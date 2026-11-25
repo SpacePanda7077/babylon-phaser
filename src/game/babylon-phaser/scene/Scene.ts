@@ -51,6 +51,7 @@ export class Scene {
       if (!this.ready) return;
       this.input.update(deltaMs);
       this.update(deltaMs);
+      this.camera.update(deltaMs);
     });
   }
 

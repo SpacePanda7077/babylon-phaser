@@ -15,7 +15,12 @@ export type ShapeMaterialOptions = Omit<PbrMaterialProps, "baseColorFactor"> & {
 
 export type ShapeOptions = ShapeMaterialOptions & {
   position?: Partial<Vec3>;
+  /** Euler rotation in radians. */
+  rotation?: Partial<Vec3>;
 };
+
+const DEG2RAD = Math.PI / 180;
+const RAD2DEG = 180 / Math.PI;
 
 /** Base class for every primitive. Subclasses only create the mesh. */
 export abstract class Shape<M extends Mesh = Mesh> {
@@ -46,8 +51,52 @@ export abstract class Shape<M extends Mesh = Mesh> {
     this.mesh.position.z = v;
   }
 
+  // Rotation accessors (radians): `shape.rotationY += delta` spins the mesh.
+  get rotationX() {
+    return this.mesh.rotation.x;
+  }
+  set rotationX(v: number) {
+    this.mesh.rotation.x = v;
+  }
+
+  get rotationY() {
+    return this.mesh.rotation.y;
+  }
+  set rotationY(v: number) {
+    this.mesh.rotation.y = v;
+  }
+
+  get rotationZ() {
+    return this.mesh.rotation.z;
+  }
+  set rotationZ(v: number) {
+    this.mesh.rotation.z = v;
+  }
+
+  // Same thing in degrees: `shape.angleY += 90`.
+  get angleX() {
+    return this.rotationX * RAD2DEG;
+  }
+  set angleX(v: number) {
+    this.rotationX = v * DEG2RAD;
+  }
+
+  get angleY() {
+    return this.rotationY * RAD2DEG;
+  }
+  set angleY(v: number) {
+    this.rotationY = v * DEG2RAD;
+  }
+
+  get angleZ() {
+    return this.rotationZ * RAD2DEG;
+  }
+  set angleZ(v: number) {
+    this.rotationZ = v * DEG2RAD;
+  }
+
   constructor(mesh: M, options: ShapeOptions = {}) {
-    const { color, alpha, position, ...rest } = options;
+    const { color, alpha, position, rotation, ...rest } = options;
 
     this.mesh = mesh;
     this.color = color ?? "0xffffff";
@@ -62,6 +111,7 @@ export abstract class Shape<M extends Mesh = Mesh> {
     this.mesh.material = this.material;
 
     this.setPosition(position?.x ?? 0, position?.y ?? 0, position?.z ?? 0);
+    this.setRotation(rotation?.x ?? 0, rotation?.y ?? 0, rotation?.z ?? 0);
   }
 
   /**
@@ -102,6 +152,27 @@ export abstract class Shape<M extends Mesh = Mesh> {
     this.x = x;
     this.y = y;
     this.z = z;
+    return this;
+  }
+
+  /** Set Euler rotation in radians. */
+  setRotation(x: number, y: number, z: number) {
+    this.rotationX = x;
+    this.rotationY = y;
+    this.rotationZ = z;
+    return this;
+  }
+
+  /** Set Euler rotation in degrees. */
+  setAngle(x: number, y: number, z: number) {
+    return this.setRotation(x * DEG2RAD, y * DEG2RAD, z * DEG2RAD);
+  }
+
+  /** Add to the current rotation (radians). */
+  rotate(x: number, y: number, z: number) {
+    this.rotationX += x;
+    this.rotationY += y;
+    this.rotationZ += z;
     return this;
   }
 
