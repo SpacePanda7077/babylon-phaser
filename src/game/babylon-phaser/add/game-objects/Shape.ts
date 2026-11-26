@@ -1,6 +1,7 @@
 // shapes/Shape.ts
 import {
   createPbrMaterial,
+  setMeshVisible,
   type Mesh,
   type PbrMaterialProps,
 } from "@babylonjs/lite";
@@ -17,6 +18,8 @@ export type ShapeOptions = ShapeMaterialOptions & {
   position?: Partial<Vec3>;
   /** Euler rotation in radians. */
   rotation?: Partial<Vec3>;
+  scale?: number | Partial<Vec3>;
+  visible?: boolean;
 };
 
 const DEG2RAD = Math.PI / 180;
@@ -51,7 +54,29 @@ export abstract class Shape<M extends Mesh = Mesh> {
     this.mesh.position.z = v;
   }
 
-  // Rotation accessors (radians): `shape.rotationY += delta` spins the mesh.
+  // Scale accessors: `shape.scaleX *= 2`.
+  get scaleX() {
+    return this.mesh.scaling.x;
+  }
+  set scaleX(v: number) {
+    this.mesh.scaling.x = v;
+  }
+
+  get scaleY() {
+    return this.mesh.scaling.y;
+  }
+  set scaleY(v: number) {
+    this.mesh.scaling.y = v;
+  }
+
+  get scaleZ() {
+    return this.mesh.scaling.z;
+  }
+  set scaleZ(v: number) {
+    this.mesh.scaling.z = v;
+  }
+
+  // Rotation accessors (radians): `shape.rotationY += delta * 0.002`.
   get rotationX() {
     return this.mesh.rotation.x;
   }
@@ -94,9 +119,16 @@ export abstract class Shape<M extends Mesh = Mesh> {
   set angleZ(v: number) {
     this.rotationZ = v * DEG2RAD;
   }
-
+  // Visibility: `if (shape.visible) ...` / `shape.visible = false`.
+  get visible(): boolean {
+    return this.mesh.visible ?? true;
+  }
+  set visible(v: boolean) {
+    setMeshVisible(this.mesh, v);
+  }
   constructor(mesh: M, options: ShapeOptions = {}) {
-    const { color, alpha, position, rotation, ...rest } = options;
+    const { color, alpha, position, rotation, scale, visible, ...rest } =
+      options;
 
     this.mesh = mesh;
     this.color = color ?? "0xffffff";
@@ -112,6 +144,8 @@ export abstract class Shape<M extends Mesh = Mesh> {
 
     this.setPosition(position?.x ?? 0, position?.y ?? 0, position?.z ?? 0);
     this.setRotation(rotation?.x ?? 0, rotation?.y ?? 0, rotation?.z ?? 0);
+    if (scale !== undefined) this.setScale(scale);
+    if (visible !== undefined) this.setVisible(visible);
   }
 
   /**
@@ -155,6 +189,10 @@ export abstract class Shape<M extends Mesh = Mesh> {
     return this;
   }
 
+  getPosition(): Vec3 {
+    return { x: this.x, y: this.y, z: this.z };
+  }
+
   /** Set Euler rotation in radians. */
   setRotation(x: number, y: number, z: number) {
     this.rotationX = x;
@@ -176,12 +214,26 @@ export abstract class Shape<M extends Mesh = Mesh> {
     return this;
   }
 
-  setScale(scale: number | { x?: number; y?: number; z?: number }) {
+  /** Pass a number for uniform scale, or an object. Omitted axes keep their current value. */
+  setScale(scale: number | Partial<Vec3>) {
     if (typeof scale === "number") {
-      this.mesh.scaling.set(scale, scale, scale);
+      this.scaleX = scale;
+      this.scaleY = scale;
+      this.scaleZ = scale;
     } else {
-      this.mesh.scaling.set(scale.x ?? 1, scale.y ?? 1, scale.z ?? 1);
+      if (scale.x !== undefined) this.scaleX = scale.x;
+      if (scale.y !== undefined) this.scaleY = scale.y;
+      if (scale.z !== undefined) this.scaleZ = scale.z;
     }
+    return this;
+  }
+
+  getScale(): Vec3 {
+    return { x: this.scaleX, y: this.scaleY, z: this.scaleZ };
+  }
+
+  setVisible(visible: boolean) {
+    this.visible = visible;
     return this;
   }
 }

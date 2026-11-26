@@ -21,6 +21,8 @@ export class Menu extends Scene {
       .setRotation(Math.PI / 2, 0, 0);
 
     this.player = new Player(this);
+
+    this.add.glb("https://playground.babylonjs.com/scenes/BoomBox.glb");
     this.cam = this.camera.addTps("tps", {
       target: this.player.body.mesh,
       radius: 3,
@@ -34,6 +36,7 @@ export class Menu extends Scene {
     this.camera.switchTo("tps");
     this.input_handler = new InputHandler(this);
     this.switchscene = this.input.keyBoard.addKey("v");
+    this.player.body.setVisible(false);
   }
   update(delta: number): void {
     this.input_handler.update();
@@ -41,6 +44,7 @@ export class Menu extends Scene {
       this.input_handler.input_vector.x,
       this.input_handler.input_vector.y,
     );
+
     this.player.update(dir, delta);
 
     if (this.switchscene.justDown()) {

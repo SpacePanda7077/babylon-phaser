@@ -2,6 +2,8 @@ import {
   addToScene,
   type EngineContext,
   type SceneContext,
+  loadBabylon,
+  loadGltf,
 } from "@babylonjs/lite";
 import { Cube, type CubeOptions } from "./game-objects/Cube";
 import { Sphere, type SphereOptions } from "./game-objects/Sphere";
@@ -10,6 +12,9 @@ import { Cylinder, type CylinderOptions } from "./game-objects/Cylinder";
 import { Cone, type ConeOptions } from "./game-objects/Cone";
 import { Capsule, type CapsuleOptions } from "./game-objects/Capsule";
 import type { Shape, Vec3 } from "./game-objects/Shape";
+import { Model, type ModelOptions } from "./game-objects/Model";
+
+type AssetSource = string | ArrayBuffer | Blob;
 
 /** Extra per-shape size options. Everything is optional and has a default. */
 type Dimensions<T> = Omit<T, "color" | "alpha" | "position">;
@@ -152,5 +157,33 @@ export class Add {
     return this.register(
       new Capsule(this.engine, { ...dimensions, color, position, alpha }),
     );
+  }
+
+  /** .glb or .gltf. URL, ArrayBuffer or Blob. */
+  async glb(source: AssetSource, options: ModelOptions = {}) {
+    const container = await loadGltf(this.engine, source);
+    addToScene(this.babylon_scene, container);
+    return new Model(container, options);
+  }
+
+  /** Same loader as glb(). Kept so both names work. */
+  gltf(source: AssetSource, options: ModelOptions = {}) {
+    return this.glb(source, options);
+  }
+
+  /** Babylon.js .babylon scene file (URL only). */
+  async babylon(url: string, options: ModelOptions = {}) {
+    const container = await loadBabylon(this.engine, url);
+    addToScene(this.babylon_scene, container);
+    return new Model(container, options);
+  }
+
+  /** Picks the loader from the file extension. */
+  asset(source: AssetSource, options: ModelOptions = {}) {
+    if (typeof source !== "string") return this.glb(source, options); // raw data: glb/gltf
+    const ext = source.split(/[?#]/)[0].split(".").pop()?.toLowerCase();
+    if (ext === "glb" || ext === "gltf") return this.glb(source, options);
+    if (ext === "babylon") return this.babylon(source, options);
+    throw new Error(`add.asset: unsupported format ".${ext}"`);
   }
 }
