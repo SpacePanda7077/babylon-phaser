@@ -1,12 +1,13 @@
 // camera/Camera.ts
-import type { Mesh, SceneContext } from "@babylonjs/lite";
+import type { SceneContext } from "@babylonjs/lite";
 import type { BaseCamera } from "./BaseCamera";
 import { FpsCamera, type FpsOptions } from "./FpsCamera";
+import type { FollowTarget } from "./MouseLook";
 import {
   OrbitCamera,
   type FollowOptions,
   type OrbitOptions,
-} from "./OrbitalCamera";
+} from "./OrbitCamera";
 import { TpsCamera, type TpsOptions } from "./TpsCamera";
 
 /** Owns every camera in a scene and switches between them. */
@@ -84,23 +85,23 @@ export class Camera {
     this.cameras.delete(name);
   }
 
+  /** Camera-relative move direction from the active camera. */
+  moveDirection(x: number, y: number) {
+    return this.active ? this.active.moveDirection(x, y) : { x: 0, z: 0 };
+  }
+
   // ---- compatibility with the old API ---------------------------------
 
   attachControl(value: boolean) {
     if (this.active instanceof OrbitCamera) this.active.attachControl(value);
   }
 
-  startFollow(target: Mesh, options?: FollowOptions) {
+  startFollow(target: FollowTarget, options?: FollowOptions) {
     if (this.active instanceof OrbitCamera) this.active.follow(target, options);
   }
 
   stopFollow() {
     if (this.active instanceof OrbitCamera) this.active.stopFollow();
-  }
-
-  /** Camera-relative move direction from the active camera. */
-  moveDirection(x: number, y: number) {
-    return this.active ? this.active.moveDirection(x, y) : { x: 0, z: 0 };
   }
 
   // ---- frame loop -----------------------------------------------------

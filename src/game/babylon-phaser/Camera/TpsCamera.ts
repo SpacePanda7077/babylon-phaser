@@ -1,19 +1,22 @@
 // camera/TpsCamera.ts
 import {
   createArcRotateCamera,
-  type Mesh,
   type SceneContext,
+  type Vec3,
 } from "@babylonjs/lite";
 import { BaseCamera, smoothFactor } from "./BaseCamera";
 import {
   applyYawPitch,
   MouseLook,
+  resolveTarget,
+  type Followable,
+  type FollowTarget,
   type LookLimits,
-  type Vec3,
 } from "./MouseLook";
 
 export type TpsOptions = {
-  target: Mesh;
+  /** What to follow: a Shape, a Model, or a node/mesh. */
+  target: FollowTarget;
   radius?: number;
   /** Look-at point relative to the target (e.g. head height). Default: y 1.5. */
   offset?: Partial<Vec3>;
@@ -28,14 +31,14 @@ export type TpsOptions = {
    * Default 35 up / 70 down. "Up" swings the camera lower toward the ground.
    */
   lookLimits?: LookLimits;
-  /** Rotate the target mesh's Y rotation to match the camera yaw. Default: false. */
+  /** Rotate the target's Y rotation to match the camera yaw. Default: false. */
   syncTargetYaw?: boolean;
 };
 
 /** Third-person camera: orbits behind a target with pointer-lock mouse look. */
 export class TpsCamera extends BaseCamera {
   look: MouseLook;
-  target: Mesh;
+  target: Followable;
   radius: number;
   offset: Vec3;
   shoulder: number;
@@ -57,7 +60,7 @@ export class TpsCamera extends BaseCamera {
       }),
     );
 
-    this.target = options.target;
+    this.target = resolveTarget(options.target);
     this.radius = options.radius ?? 5;
     this.shoulder = options.shoulder ?? 0;
     this.smoothing = options.smoothing ?? 12;
@@ -76,6 +79,13 @@ export class TpsCamera extends BaseCamera {
 
     // Snap to the target immediately.
     this.snap();
+  }
+
+  /** Change what the camera follows. */
+  setTarget(target: FollowTarget) {
+    this.target = resolveTarget(target);
+    this.snap();
+    return this;
   }
 
   /** Limit vertical look in degrees from horizontal. */

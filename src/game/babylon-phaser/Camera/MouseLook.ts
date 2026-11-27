@@ -1,7 +1,20 @@
 // camera/MouseLook.ts
-import type { ArcRotateCamera } from "@babylonjs/lite";
+import type { ArcRotateCamera, Vec3 } from "@babylonjs/lite";
 
-export type Vec3 = { x: number; y: number; z: number };
+/** Anything a camera can follow: a Mesh, a SceneNode, or any {position, rotation}. */
+export type Followable = { position: Vec3; rotation: Vec3 };
+
+/** What you can pass as a target: a node/mesh, or a Model/Shape wrapper. */
+export type FollowTarget =
+  | Followable
+  | { node: Followable }
+  | { mesh: Followable };
+
+export function resolveTarget(t: FollowTarget): Followable {
+  if ("position" in t) return t;
+  if ("node" in t) return t.node;
+  return t.mesh;
+}
 
 /** Max degrees to look up / down from horizontal. */
 export type LookLimits = { up?: number; down?: number };
@@ -10,6 +23,11 @@ const DEG2RAD = Math.PI / 180;
 const RAD2DEG = 180 / Math.PI;
 const MAX_LIMIT_DEG = 89; // 90 would flip the camera
 
+/**
+ * Convert a look direction (yaw/pitch) into ArcRotate alpha/beta.
+ * The camera sits at `target - direction * radius`, looking at `target`.
+ * yaw 0 looks toward +Z, positive yaw turns right, positive pitch looks up.
+ */
 export function applyYawPitch(
   cam: ArcRotateCamera,
   yaw: number,
@@ -21,6 +39,7 @@ export function applyYawPitch(
   cam.radius = radius;
 }
 
+/** Pointer-lock mouse look. Click the canvas to capture the mouse, Esc to release. */
 export class MouseLook {
   yaw = 0;
   pitch = 0;
@@ -82,14 +101,17 @@ export class MouseLook {
 
   // ---- vectors ---------------------------------------------------------
 
+  /** Flat forward vector (ignores pitch). Use for WASD movement. */
   get forward(): Vec3 {
     return { x: Math.sin(this.yaw), y: 0, z: Math.cos(this.yaw) };
   }
 
+  /** Flat right vector. Use for strafing. */
   get right(): Vec3 {
     return { x: Math.cos(this.yaw), y: 0, z: -Math.sin(this.yaw) };
   }
 
+  /** Full 3D look direction (includes pitch). */
   get direction(): Vec3 {
     const cp = Math.cos(this.pitch);
     return {

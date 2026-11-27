@@ -2,8 +2,10 @@
 import {
   setMeshVisible,
   type AssetContainer,
+  type Mesh,
   type SceneNode,
 } from "@babylonjs/lite";
+import { shadows } from "./Shadows";
 
 export type Vec3 = { x: number; y: number; z: number };
 
@@ -13,6 +15,10 @@ export type ModelOptions = {
   rotation?: Partial<Vec3>;
   scale?: number | Partial<Vec3>;
   visible?: boolean;
+  /** Every mesh in the asset casts a shadow. */
+  castShadow?: boolean;
+  /** Every mesh in the asset receives shadows. */
+  receiveShadow?: boolean;
 };
 
 const DEG2RAD = Math.PI / 180;
@@ -29,6 +35,8 @@ export class Model {
   // stored separately and multiplied on top of this.
   private base: Vec3;
   private user: Vec3 = { x: 1, y: 1, z: 1 };
+  private _castShadow = false;
+  private _receiveShadow = false;
 
   constructor(container: AssetContainer, options: ModelOptions = {}) {
     const root = container.entities[0];
@@ -54,6 +62,16 @@ export class Model {
     );
     if (options.scale !== undefined) this.setScale(options.scale);
     if (options.visible !== undefined) this.setVisible(options.visible);
+    if (options.castShadow !== undefined) this.castShadow = options.castShadow;
+    if (options.receiveShadow !== undefined)
+      this.receiveShadow = options.receiveShadow;
+  }
+
+  /** All renderable meshes in the asset (glTF nodes without geometry are skipped). */
+  private get meshes(): Mesh[] {
+    return (this.container.entities as unknown[]).filter(
+      (e): e is Mesh => !!e && typeof e === "object" && "receiveShadows" in e,
+    );
   }
 
   /** Animation groups from the file. addToScene already ticks them. */
@@ -152,6 +170,25 @@ export class Model {
     setMeshVisible(this.node, v); // cascades to children
   }
 
+  // ---- shadows ----------------------------------------------------------
+  get castShadow(): boolean {
+    return this._castShadow;
+  }
+  set castShadow(v: boolean) {
+    if (v === this._castShadow) return;
+    this._castShadow = v;
+    if (v) shadows.add(this.meshes);
+    else shadows.remove(this.meshes);
+  }
+
+  get receiveShadow(): boolean {
+    return this._receiveShadow;
+  }
+  set receiveShadow(v: boolean) {
+    this._receiveShadow = v;
+    for (const m of this.meshes) m.receiveShadows = v;
+  }
+
   // ---- chainable setters ------------------------------------------------
   setPosition(x: number, y: number, z: number) {
     this.x = x;
@@ -201,6 +238,16 @@ export class Model {
 
   setVisible(visible: boolean) {
     this.visible = visible;
+    return this;
+  }
+
+  setCastShadow(cast: boolean) {
+    this.castShadow = cast;
+    return this;
+  }
+
+  setReceiveShadow(receive: boolean) {
+    this.receiveShadow = receive;
     return this;
   }
 }

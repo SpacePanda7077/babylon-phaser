@@ -6,6 +6,7 @@ import {
   type PbrMaterialProps,
 } from "@babylonjs/lite";
 import { hex2rgb } from "../../utils/convert-hex-rgb";
+import { shadows } from "./Shadows";
 
 export type Vec3 = { x: number; y: number; z: number };
 
@@ -20,6 +21,10 @@ export type ShapeOptions = ShapeMaterialOptions & {
   rotation?: Partial<Vec3>;
   scale?: number | Partial<Vec3>;
   visible?: boolean;
+  /** Cast a shadow onto receivers. Needs a shadow generator bound via `shadows.bind`. */
+  castShadow?: boolean;
+  /** Receive shadows from casters. */
+  receiveShadow?: boolean;
 };
 
 const DEG2RAD = Math.PI / 180;
@@ -31,6 +36,7 @@ export abstract class Shape<M extends Mesh = Mesh> {
   material: PbrMaterialProps;
   color: string;
   alpha: number;
+  private _castShadow = false;
 
   // Position accessors: `shape.x += 1` reads and writes the mesh directly.
   get x() {
@@ -126,9 +132,36 @@ export abstract class Shape<M extends Mesh = Mesh> {
   set visible(v: boolean) {
     setMeshVisible(this.mesh, v);
   }
+  // Shadows: `shape.castShadow = true` / `shape.receiveShadow = true`.
+  get castShadow(): boolean {
+    return this._castShadow;
+  }
+  set castShadow(v: boolean) {
+    if (v === this._castShadow) return;
+    this._castShadow = v;
+    if (v) shadows.add([this.mesh]);
+    else shadows.remove([this.mesh]);
+  }
+
+  get receiveShadow(): boolean {
+    return this.mesh.receiveShadows ?? false;
+  }
+  set receiveShadow(v: boolean) {
+    this.mesh.receiveShadows = v;
+  }
+
   constructor(mesh: M, options: ShapeOptions = {}) {
-    const { color, alpha, position, rotation, scale, visible, ...rest } =
-      options;
+    const {
+      color,
+      alpha,
+      position,
+      rotation,
+      scale,
+      visible,
+      castShadow,
+      receiveShadow,
+      ...rest
+    } = options;
 
     this.mesh = mesh;
     this.color = color ?? "0xffffff";
@@ -146,6 +179,8 @@ export abstract class Shape<M extends Mesh = Mesh> {
     this.setRotation(rotation?.x ?? 0, rotation?.y ?? 0, rotation?.z ?? 0);
     if (scale !== undefined) this.setScale(scale);
     if (visible !== undefined) this.setVisible(visible);
+    if (castShadow !== undefined) this.castShadow = castShadow;
+    if (receiveShadow !== undefined) this.receiveShadow = receiveShadow;
   }
 
   /**
@@ -234,6 +269,16 @@ export abstract class Shape<M extends Mesh = Mesh> {
 
   setVisible(visible: boolean) {
     this.visible = visible;
+    return this;
+  }
+
+  setCastShadow(cast: boolean) {
+    this.castShadow = cast;
+    return this;
+  }
+
+  setReceiveShadow(receive: boolean) {
+    this.receiveShadow = receive;
     return this;
   }
 }

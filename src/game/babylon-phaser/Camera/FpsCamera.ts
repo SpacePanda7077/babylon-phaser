@@ -1,20 +1,22 @@
 // camera/FpsCamera.ts
 import {
   createArcRotateCamera,
-  type Mesh,
   type SceneContext,
+  type Vec3,
 } from "@babylonjs/lite";
 import { BaseCamera } from "./BaseCamera";
 import {
   applyYawPitch,
   MouseLook,
+  resolveTarget,
+  type Followable,
+  type FollowTarget,
   type LookLimits,
-  type Vec3,
 } from "./MouseLook";
 
 export type FpsOptions = {
-  /** Mesh the eyes are attached to (usually the player). */
-  target?: Mesh;
+  /** What the eyes are attached to: a Shape, a Model, or a node/mesh. */
+  target?: FollowTarget;
   /** Eye position relative to the target's position. Default: 1.6 up. */
   eyeOffset?: Partial<Vec3>;
   /** Start position when there is no target. */
@@ -23,7 +25,7 @@ export type FpsOptions = {
   invertY?: boolean;
   /** Max degrees to look up/down from horizontal. Default 89 / 89. */
   lookLimits?: LookLimits;
-  /** Rotate the target mesh's Y rotation to match the view. Default: true. */
+  /** Rotate the target's Y rotation to match the view. Default: true. */
   syncTargetYaw?: boolean;
 };
 
@@ -36,7 +38,7 @@ const EYE_RADIUS = 0.01;
  */
 export class FpsCamera extends BaseCamera {
   look: MouseLook;
-  target: Mesh | null;
+  target: Followable | null;
   eyeOffset: Vec3;
   position: Vec3;
   syncTargetYaw: boolean;
@@ -56,7 +58,7 @@ export class FpsCamera extends BaseCamera {
       }),
     );
 
-    this.target = options.target ?? null;
+    this.target = options.target ? resolveTarget(options.target) : null;
     this.syncTargetYaw = options.syncTargetYaw ?? true;
     this.eyeOffset = {
       x: options.eyeOffset?.x ?? 0,
@@ -76,8 +78,8 @@ export class FpsCamera extends BaseCamera {
     if (options.invertY !== undefined) this.look.invertY = options.invertY;
   }
 
-  attachTo(target: Mesh | null) {
-    this.target = target;
+  attachTo(target: FollowTarget | null) {
+    this.target = target ? resolveTarget(target) : null;
     return this;
   }
 

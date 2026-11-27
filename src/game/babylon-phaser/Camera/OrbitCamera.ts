@@ -2,11 +2,11 @@
 import {
   attachControl,
   createArcRotateCamera,
-  type Mesh,
   type SceneContext,
+  type Vec3,
 } from "@babylonjs/lite";
 import { BaseCamera, smoothFactor } from "./BaseCamera";
-import type { Vec3 } from "./MouseLook";
+import { resolveTarget, type Followable, type FollowTarget } from "./MouseLook";
 
 export type OrbitOptions = {
   alpha?: number;
@@ -23,9 +23,9 @@ export type FollowOptions = {
   smoothing?: number;
 };
 
-/** The "normal" camera: orbits a point, optionally follows a mesh. */
+/** The "normal" camera: orbits a point, optionally follows a mesh, node or model. */
 export class OrbitCamera extends BaseCamera {
-  followTarget: Mesh | null = null;
+  followTarget: Followable | null = null;
   followOffset: Vec3 = { x: 0, y: 0, z: 0 };
   followSmoothing = 0;
 
@@ -63,8 +63,9 @@ export class OrbitCamera extends BaseCamera {
     }
   }
 
-  follow(target: Mesh, options: FollowOptions = {}) {
-    this.followTarget = target;
+  follow(target: FollowTarget, options: FollowOptions = {}) {
+    const node = resolveTarget(target);
+    this.followTarget = node;
     this.followSmoothing = options.smoothing ?? 0;
     this.followOffset = {
       x: options.offset?.x ?? 0,
@@ -74,7 +75,7 @@ export class OrbitCamera extends BaseCamera {
     if (options.radius !== undefined) this.main.radius = options.radius;
 
     // Snap once so the camera doesn't sweep in from the old target.
-    const p = target.position;
+    const p = node.position;
     const o = this.followOffset;
     this.main.target.x = p.x + o.x;
     this.main.target.y = p.y + o.y;

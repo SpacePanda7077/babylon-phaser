@@ -1,6 +1,5 @@
 // camera/BaseCamera.ts
-import type { ArcRotateCamera, SceneContext } from "@babylonjs/lite";
-import type { Vec3 } from "./MouseLook";
+import type { ArcRotateCamera, SceneContext, Vec3 } from "@babylonjs/lite";
 
 export type MoveDir = { x: number; z: number };
 

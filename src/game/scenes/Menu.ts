@@ -1,15 +1,12 @@
 import { Scene } from "../babylon-phaser/scene/Scene";
 import type { WasdKeys } from "../babylon-phaser/input/Keyboard/Keyboard";
-import { Player } from "./Player/Player";
-import { InputHandler } from "./Inputs/input";
+import type { Model } from "../babylon-phaser/add/game-objects/Model";
 
 export class Menu extends Scene {
-  static key = "Menu";
-  d: WasdKeys;
-
-  player: Player;
-  input_handler: InputHandler;
-  switchscene: import("../babylon-phaser/input/Keyboard/Key").Key;
+  player: Model;
+  inputs: WasdKeys;
+  speed = 1;
+  input_vector = { x: 0, y: 0 };
   cam: import("../babylon-phaser/Camera/TpsCamera").TpsCamera;
 
   constructor() {
@@ -17,39 +14,48 @@ export class Menu extends Scene {
   }
   async create() {
     this.add
-      .Plane({ x: 0, y: 0, z: 0 }, { width: 10, height: 10 })
-      .setRotation(Math.PI / 2, 0, 0);
+      .Plane({ x: 0, y: 0, z: 0 }, { width: 10, height: 10 }, "0xfff000")
+      .setRotation(Math.PI / 2, 0, 0)
+      .setReceiveShadow(true);
 
-    this.player = new Player(this);
+    this.player = await (await this.add.glb("model.glb"))
+      .setCastShadow(true)
+      .setReceiveShadow(true);
+    this.inputs = this.input.keyBoard.addWASD();
 
-    this.add.glb("https://playground.babylonjs.com/scenes/BoomBox.glb");
     this.cam = this.camera.addTps("tps", {
-      target: this.player.body.mesh,
-      radius: 3,
-      shoulder: 0.6, // over the right shoulder
-      offset: { y: 0.5 },
-      sensitivity: 0.0005,
+      target: this.player.node,
+      offset: { y: 1 },
+      shoulder: 0.6,
+      lookLimits: { up: 20, down: 40 },
       syncTargetYaw: true,
-      lookLimits: { up: 15, down: 60 },
     });
-    this.camera.addFps("fps", { target: this.player.body.mesh });
     this.camera.switchTo("tps");
-    this.input_handler = new InputHandler(this);
-    this.switchscene = this.input.keyBoard.addKey("v");
-    this.player.body.setVisible(false);
   }
   update(delta: number): void {
-    this.input_handler.update();
-    const dir = this.camera.moveDirection(
-      this.input_handler.input_vector.x,
-      this.input_handler.input_vector.y,
+    this.updateInputs();
+    const { x: dx, z: dy } = this.cam.moveDirection(
+      this.input_vector.x,
+      this.input_vector.y,
     );
+    this.player.x += dx * this.speed * (delta / 1000);
+    this.player.z += dy * this.speed * (delta / 1000);
+  }
 
-    this.player.update(dir, delta);
-
-    if (this.switchscene.justDown()) {
-      this.scene.restart();
-      console.log("Switch");
+  updateInputs() {
+    if (this.inputs.a.isDown()) {
+      this.input_vector.x = -1;
+    } else if (this.inputs.d.isDown()) {
+      this.input_vector.x = 1;
+    } else {
+      this.input_vector.x = 0;
+    }
+    if (this.inputs.s.isDown()) {
+      this.input_vector.y = -1;
+    } else if (this.inputs.w.isDown()) {
+      this.input_vector.y = 1;
+    } else {
+      this.input_vector.y = 0;
     }
   }
 }
