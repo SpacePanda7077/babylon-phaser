@@ -4,7 +4,6 @@ import {
   createHemisphericLight,
   createPcfDirectionalShadowGenerator,
   createPointLight,
-  registerSceneWithShadowSupport,
   type DirectionalLight,
   type EngineContext,
   type HemisphericLight,
@@ -17,33 +16,31 @@ export class Light {
   lights: (HemisphericLight | DirectionalLight | PointLight)[] = [];
   babylon_scene: SceneContext;
   private engine: EngineContext;
-  /** Resolves once the shadow system is ready. `await` it if you need to. */
-  shadowsReady: Promise<void>;
 
   constructor(babylon_scene: SceneContext, engine: EngineContext) {
     this.babylon_scene = babylon_scene;
     this.engine = engine;
     // Light direction must point DOWN (negative y), otherwise it lights the
     // sky and nothing gets a shadow on the ground.
-    const light = this.addDirectionalLight({ x: 0, y: 5, z: 0 }, 10);
-    this.addHemisphericLight({ x: 3, y: 5, z: 0 }, 5);
-    addToScene(babylon_scene, light); // the scene now owns it
-    this.lights.push(light);
-    this.shadowsReady = this.enableShadows(light);
+    // addDirectionalLight already adds it to the scene.
+    const light = this.addDirectionalLight({ x: -3, y: -5, z: -1 }, 3);
+    this.addHemisphericLight({ x: 0, y: 1, z: 0 }, 1);
+    this.enableShadows(light);
   }
 
   /**
    * Make a directional light cast shadows. Everything with
    * `castShadow = true` (Shape / Model) is picked up automatically.
    */
-  async enableShadows(light: DirectionalLight, mapSize = 1024) {
+  enableShadows(light: DirectionalLight, mapSize = 1024) {
     light.shadowGenerator = createPcfDirectionalShadowGenerator(
       this.engine,
       light,
       { mapSize },
     );
     shadows.bind(light.shadowGenerator);
-    await registerSceneWithShadowSupport(this.babylon_scene);
+    // The scene itself is registered in Scene.boot() with
+    // registerSceneWithShadowSupport, replacing the plain registerScene.
   }
 
   addPointLight(

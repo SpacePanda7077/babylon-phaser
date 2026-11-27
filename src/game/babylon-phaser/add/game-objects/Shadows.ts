@@ -20,6 +20,7 @@ class ShadowRegistry {
    */
   bind(generator: ShadowGenerator) {
     this.generator = generator;
+    this.casters.clear(); // new scene/light: drop casters from the old one
     this.flush();
   }
 
@@ -31,6 +32,10 @@ class ShadowRegistry {
   remove(meshes: Mesh[]) {
     meshes.forEach((m) => this.casters.delete(m));
     this.flush();
+  }
+
+  get count() {
+    return this.casters.size;
   }
 
   private flush() {

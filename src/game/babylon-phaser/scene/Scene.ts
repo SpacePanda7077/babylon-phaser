@@ -2,7 +2,7 @@
 import {
   disposeScene,
   onBeforeRender,
-  registerScene,
+  registerSceneWithShadowSupport,
   stopEngine,
   unregisterScene,
   type EngineContext,
@@ -62,7 +62,8 @@ export class Scene {
       await Promise.resolve();
       await this.preload();
       await this.create();
-      await registerScene(this.babylon_scene); // after everything is added
+      // Must replace registerScene: it also builds the shadow-map passes.
+      await registerSceneWithShadowSupport(this.babylon_scene); // after everything is added
     } catch (e) {
       // Swallow errors so `ready` always resolves and start() can't hang
       console.error("Scene boot failed:", e);

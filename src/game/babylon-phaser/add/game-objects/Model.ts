@@ -67,11 +67,19 @@ export class Model {
       this.receiveShadow = options.receiveShadow;
   }
 
-  /** All renderable meshes in the asset (glTF nodes without geometry are skipped). */
+  /** All meshes in the asset: container entities plus descendants of the root. */
   private get meshes(): Mesh[] {
-    return (this.container.entities as unknown[]).filter(
-      (e): e is Mesh => !!e && typeof e === "object" && "receiveShadows" in e,
-    );
+    const seen = new Set<unknown>();
+    const out: Mesh[] = [];
+    const visit = (n: any) => {
+      if (!n || typeof n !== "object" || seen.has(n)) return;
+      seen.add(n);
+      if ("receiveShadows" in n || "material" in n) out.push(n as Mesh);
+      for (const c of n.children ?? []) visit(c);
+    };
+    for (const e of this.container.entities as unknown[]) visit(e);
+    visit(this.node);
+    return out;
   }
 
   /** Animation groups from the file. addToScene already ticks them. */
